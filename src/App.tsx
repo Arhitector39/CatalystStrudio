@@ -21,6 +21,7 @@ import {
   Zap,
   LogOut
 } from 'lucide-react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -524,6 +525,7 @@ export default function App() {
           </div>
         </div>
       </footer>
+      <SpeedInsights />
     </div>
   );
 }
