@@ -20,7 +20,9 @@ import {
   Settings,
   Sparkles,
   Loader2,
-  User
+  User,
+  Clock,
+  Target
 } from 'lucide-react';
 import { AgentOutput, AGENTS } from '../types';
 
@@ -31,21 +33,21 @@ interface Props {
 }
 
 const AGENT_ICONS: Record<string, any> = {
-  analyst: Briefcase,
-  pm: Settings,
-  product: BrainCircuit,
+  analyst: BarChart3,
+  pm: Briefcase,
+  product: Layout,
   uxui: Layout,
   psychologist: BrainCircuit,
   ios: Code,
   android: Code,
   frontend: Code,
-  backend: Code,
-  architect: ShieldCheck,
-  qa: CheckCircle2,
+  backend: Settings,
+  architect: Settings,
+  qa: ShieldCheck,
   devops: Settings,
-  aso: BarChart3,
+  aso: Megaphone,
   marketing: Megaphone,
-  target: BarChart3,
+  target: Megaphone,
   data_analyst: BarChart3,
 };
 
@@ -57,22 +59,29 @@ export default function OfficeView({ outputs, onNext, isLoading }: Props) {
   const Icon = selectedOutput ? (AGENT_ICONS[selectedOutput.agentId] || User) : User;
 
   return (
-    <div className="space-y-16">
-      <div className="text-center max-w-2xl mx-auto">
-        <h2 className="text-5xl font-serif italic mb-6">Виртуальный Офис</h2>
-        <p className="text-gray-500 leading-relaxed">
-          Наши специалисты проработали каждый аспект вашего проекта. Выберите агента, чтобы увидеть результаты.
+    <div className="space-y-12">
+      <div className="text-center max-w-2xl mx-auto px-4">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-[#007AFF] rounded-full text-[10px] font-bold uppercase tracking-widest mb-6 border border-blue-100 shadow-sm"
+        >
+          <Briefcase size={12} />
+          Этап 3: Виртуальный офис
+        </motion.div>
+        <h2 className="text-5xl font-serif italic mb-6 leading-tight">Команда в работе</h2>
+        <p className="text-gray-500 text-lg leading-relaxed font-medium opacity-80">
+          Результаты работы узкоспециализированных ИИ-агентов.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Sidebar Navigation */}
-        <div className="lg:col-span-4 space-y-3">
-          <div className="p-4 bg-gray-50 rounded-3xl mb-6">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-4 mb-4">Команда проекта</h3>
-            <div className="space-y-1 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="lg:col-span-3">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4">
+            <h3 className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-4 px-2">Специалисты</h3>
+            <div className="space-y-1">
               {outputs.map((output) => {
-                const agent = AGENTS.find(a => a.id === output.agentId);
                 const AgentIcon = AGENT_ICONS[output.agentId] || User;
                 const isSelected = selectedAgentId === output.agentId;
 
@@ -80,22 +89,17 @@ export default function OfficeView({ outputs, onNext, isLoading }: Props) {
                   <button
                     key={output.agentId}
                     onClick={() => setSelectedAgentId(output.agentId)}
-                    className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-left group ${
+                    className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left group ${
                       isSelected 
-                        ? 'bg-white shadow-md border border-[#141414]/5 text-[#5A5A40]' 
-                        : 'hover:bg-white/60 text-gray-500'
+                        ? 'bg-[#007AFF] text-white shadow-lg shadow-blue-200' 
+                        : 'hover:bg-gray-50 text-gray-600'
                     }`}
                   >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-                      isSelected ? 'bg-[#5A5A40] text-white' : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'
-                    }`}>
-                      <AgentIcon size={20} />
+                    <div className={`flex-shrink-0 ${isSelected ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'}`}>
+                      <AgentIcon size={16} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold truncate">{agent?.name || output.role}</p>
-                      <p className="text-[10px] uppercase tracking-tighter opacity-60 truncate">{output.role}</p>
-                    </div>
-                    {isSelected && <ChevronRight size={16} />}
+                    <span className="flex-1 text-xs font-medium truncate">{output.role}</span>
+                    {isSelected && <ChevronRight size={12} />}
                   </button>
                 );
               })}
@@ -104,97 +108,91 @@ export default function OfficeView({ outputs, onNext, isLoading }: Props) {
         </div>
 
         {/* Content Area */}
-        <div className="lg:col-span-8">
+        <div className="lg:col-span-9 space-y-6">
           <AnimatePresence mode="wait">
-            {selectedOutput && selectedAgentInfo ? (
+            {selectedOutput ? (
               <motion.div
                 key={selectedAgentId}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="bg-white rounded-[48px] border border-[#141414]/5 shadow-sm p-10 lg:p-16 relative overflow-hidden"
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-6"
               >
-                <div className="absolute top-0 right-0 p-12 opacity-5">
-                  <Icon size={160} />
-                </div>
-
-                <div className="relative z-10">
-                  <div className="flex flex-col md:flex-row md:items-center gap-8 mb-12">
-                    <img 
-                      src={selectedAgentInfo.avatar} 
-                      alt={selectedAgentInfo.name} 
-                      className="w-24 h-24 rounded-3xl object-cover shadow-xl"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div>
-                      <h3 className="text-3xl font-bold mb-1">{selectedAgentInfo.name}</h3>
-                      <p className="text-[#5A5A40] font-bold uppercase tracking-widest text-xs mb-4">{selectedOutput.role}</p>
-                      <div className="flex flex-wrap gap-2">
-                        <span className="px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5">
-                          <CheckCircle2 size={12} /> В сети
-                        </span>
-                        <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5">
-                          <FileText size={12} /> Отчет готов
-                        </span>
+                {/* Light Header Card */}
+                <div className="bg-white rounded-[32px] p-8 text-[#1A1A1A] shadow-xl border border-blue-50 relative overflow-hidden">
+                  <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-50/30 rounded-full blur-3xl" />
+                  
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center border border-blue-100 shadow-sm">
+                        <Icon size={32} className="text-[#007AFF]" />
+                      </div>
+                      <div>
+                        <h3 className="text-3xl font-serif italic mb-0.5">{selectedOutput.role}</h3>
+                        <p className="text-blue-400 font-bold uppercase tracking-widest text-[9px]">Отчет специалиста</p>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-                    <div className="p-8 bg-[#FDFDFB] rounded-[32px] border border-[#141414]/5">
-                      <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">Цели и задачи</h4>
-                      <p className="text-sm text-gray-600 leading-relaxed">{selectedOutput.goals}</p>
-                    </div>
-                    <div className="p-8 bg-[#FDFDFB] rounded-[32px] border border-[#141414]/5">
-                      <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">Ключевые решения</h4>
-                      <ul className="space-y-3">
-                        {selectedOutput.decisions.map((decision, idx) => (
-                          <li key={idx} className="flex items-start gap-3 text-sm text-gray-600">
-                            <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#5A5A40] flex-shrink-0" />
-                            {decision}
-                          </li>
-                        ))}
-                      </ul>
+                    <div className="bg-gray-50/50 rounded-2xl p-6 border border-gray-100">
+                      <h4 className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2">Цели</h4>
+                      <p className="text-lg leading-relaxed text-gray-700">{selectedOutput.goals}</p>
                     </div>
                   </div>
+                </div>
 
-                  <div className="border-t border-[#141414]/5 pt-12">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-8 flex items-center gap-2">
-                      <FileText size={14} /> Артефакты и наработки
-                    </h4>
-                    <div className="prose prose-stone max-w-none prose-headings:font-serif prose-headings:italic">
+                {/* Key Decisions */}
+                <section className="space-y-4">
+                  <h4 className="text-[9px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2 px-2">
+                    <Clock size={12} /> Ключевые решения
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {selectedOutput.decisions.map((decision, idx) => (
+                      <div key={idx} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <p className="text-xs text-gray-700 leading-relaxed">{decision}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* Artifacts */}
+                <section className="space-y-4">
+                  <h4 className="text-[9px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2 px-2">
+                    <FileText size={12} /> Артефакты и детализация
+                  </h4>
+                  <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8 lg:p-10">
+                    <div className="prose prose-sm prose-stone max-w-none prose-headings:font-serif prose-headings:italic prose-p:leading-relaxed">
                       <Markdown>{selectedOutput.artifacts}</Markdown>
                     </div>
                   </div>
-                </div>
+                </section>
               </motion.div>
             ) : (
-              <div className="h-full flex items-center justify-center p-20 text-gray-400 italic">
+              <div className="h-full flex items-center justify-center p-16 text-gray-400 italic bg-white rounded-[32px] border border-dashed border-gray-200">
                 Выберите специалиста для просмотра деталей
               </div>
             )}
           </AnimatePresence>
-        </div>
-      </div>
 
-      <div className="flex justify-center pt-12">
-        <button
-          onClick={onNext}
-          disabled={isLoading}
-          className="px-16 py-6 bg-[#141414] text-white rounded-full font-bold flex items-center gap-4 hover:bg-black transition-all shadow-2xl hover:scale-105 active:scale-95 disabled:opacity-50 group"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 size={24} className="animate-spin" />
-              Создание книги...
-            </>
-          ) : (
-            <>
-              Собрать финальную книгу
-              <Sparkles size={24} className="group-hover:rotate-12 transition-transform" />
-            </>
-          )}
-        </button>
+          <div className="flex justify-center pt-2">
+            <button
+              onClick={onNext}
+              disabled={isLoading}
+              className="w-full py-5 bg-[#007AFF] text-white rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:bg-[#0066DD] transition-all shadow-xl disabled:opacity-50 group"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 size={24} className="animate-spin" />
+                  Создание книги...
+                </>
+              ) : (
+                <>
+                  Создать книгу
+                  <Sparkles size={24} className="group-hover:rotate-12 transition-transform" />
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

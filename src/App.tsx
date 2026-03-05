@@ -16,9 +16,11 @@ import {
   Users, 
   Smartphone,
   AlertCircle,
-  ArrowLeft
+  ArrowLeft,
+  X,
+  Zap
 } from 'lucide-react';
-import { Stage, ProjectState, ProjectInput, IDEATION_AGENTS, AGENTS } from './types';
+import { Stage, ProjectState, ProjectInput, IDEATION_AGENTS, AGENTS, UserStats, PLAN_LIMITS } from './types';
 import { generateIdeation, generateRoadmap, generateOfficeOutputs, generateBook } from './services/geminiService';
 import InputForm from './components/InputForm';
 import IdeationView from './components/IdeationView';
@@ -26,6 +28,8 @@ import RoadmapView from './components/RoadmapView';
 import OfficeView from './components/OfficeView';
 import BookView from './components/BookView';
 import AgentProgress from './components/AgentProgress';
+import AuthModal from './components/AuthModal';
+import BillingInfo from './components/BillingInfo';
 
 export default function App() {
   const [state, setState] = useState<ProjectState>({
@@ -41,11 +45,49 @@ export default function App() {
     error: null,
   });
 
+  const [userStats, setUserStats] = useState<UserStats>({
+    plan: 'FREE',
+    storiesCreated: 0,
+    tokensUsed: 0,
+    balance: 0,
+    totalSpent: 0,
+  });
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isBillingOpen, setIsBillingOpen] = useState(false);
+  const [lastRequestCost, setLastRequestCost] = useState<{ tokens: number; usd: number } | null>(null);
+
   const [progress, setProgress] = useState(0);
 
   const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
+  const trackUsage = (tokens: number) => {
+    const costPerToken = 0.00002; // Base cost
+    const margin = 1.3; // +30%
+    const userCost = tokens * costPerToken * margin;
+    
+    setLastRequestCost({ tokens, usd: userCost });
+    setUserStats(prev => ({
+      ...prev,
+      tokensUsed: prev.tokensUsed + tokens,
+      totalSpent: prev.totalSpent + userCost,
+      balance: Math.max(0, prev.balance - userCost)
+    }));
+  };
+
   const handleStart = async (input: ProjectInput) => {
+    if (!isAuthenticated) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    const limits = PLAN_LIMITS[userStats.plan];
+    if (userStats.storiesCreated >= limits.maxStories) {
+      setState(prev => ({ ...prev, error: 'Лимит историй исчерпан для вашего плана. Пожалуйста, обновите план.' }));
+      return;
+    }
+
     setState(prev => ({ ...prev, input, isGenerating: true, error: null }));
     
     try {
@@ -62,6 +104,7 @@ export default function App() {
       setProgress(80);
       
       const ideation = await generateIdeation(input);
+      trackUsage(1500); // Simulated token count
       setProgress(100);
       await delay(1000);
 
@@ -73,8 +116,20 @@ export default function App() {
         activeAgent: null,
         activeAction: null
       }));
+      
+      setUserStats(prev => ({ ...prev, storiesCreated: prev.storiesCreated + 1 }));
     } catch (err) {
       setState(prev => ({ ...prev, error: 'Ошибка при генерации идей. Попробуйте еще раз.', isGenerating: false, activeAgent: null }));
+    }
+  };
+
+  const handleLogin = (method: string) => {
+    console.log('Logging in with', method);
+    setIsAuthenticated(true);
+    setIsAuthModalOpen(false);
+    // In a real app, we would fetch user stats from Firebase here
+    if (userStats.balance === 0) {
+      setUserStats(prev => ({ ...prev, balance: 10 })); // Give some initial balance for demo
     }
   };
 
@@ -92,6 +147,7 @@ export default function App() {
       await delay(2000);
       
       const roadmap = await generateRoadmap(state.ideation.synthesized);
+      trackUsage(2500); // Simulated token count
       setProgress(100);
       await delay(1000);
 
@@ -125,6 +181,7 @@ export default function App() {
       }
 
       const officeOutputs = await generateOfficeOutputs(state.ideation.synthesized, state.roadmap);
+      trackUsage(8000); // Simulated token count
       setProgress(100);
       await delay(1000);
 
@@ -154,6 +211,7 @@ export default function App() {
       setProgress(50);
       
       const bookContent = await generateBook(state.ideation.synthesized, state.officeOutputs);
+      trackUsage(12000); // Simulated token count
       setProgress(100);
       await delay(1000);
 
@@ -224,53 +282,67 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFDFB] text-[#141414] font-sans selection:bg-[#5A5A40] selection:text-white">
+    <div className="min-h-screen flex flex-col text-ink font-sans selection:bg-brand selection:text-white">
       {/* Header */}
-      <header className="border-b border-[#141414]/5 bg-white/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-4 cursor-pointer" onClick={reset}>
-            <div className="w-12 h-12 bg-[#5A5A40] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-[#5A5A40]/20">
-              <Sparkles size={24} />
+      <header className="border-b border-gray-100 bg-white/60 backdrop-blur-xl sticky top-0 z-50 flex-shrink-0">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between w-full">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={reset}>
+            <div className="w-8 h-8 bg-[#007AFF] rounded-lg flex items-center justify-center text-white shadow-md">
+              <Sparkles size={16} />
             </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight">Catalyst</h1>
-              <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Story Tales Studio</p>
-            </div>
+            <h1 className="text-base font-bold tracking-tight text-[#1A1A1A]">Catalyst</h1>
           </div>
           
-          <nav className="hidden lg:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-4">
             {[
               { s: Stage.INPUT, n: 'Ввод', i: '01' },
-              { s: Stage.IDEATION, n: 'Концепт', i: '02' },
+              { s: Stage.IDEATION, n: 'Идеи', i: '02' },
               { s: Stage.PLANNING, n: 'План', i: '03' },
               { s: Stage.OFFICE, n: 'Офис', i: '04' },
               { s: Stage.BOOK_CREATION, n: 'Книга', i: '05' }
             ].map((step, idx, arr) => (
               <React.Fragment key={step.s}>
-                <div className={`flex items-center gap-3 text-sm font-bold transition-all ${state.currentStage === step.s ? 'text-[#5A5A40]' : 'text-gray-300'}`}>
-                  <span className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center text-[10px] ${state.currentStage === step.s ? 'border-[#5A5A40] bg-[#5A5A40] text-white' : 'border-gray-200'}`}>
+                <div className={`flex items-center gap-2 text-xs font-medium transition-all ${state.currentStage === step.s ? 'text-[#1A1A1A]' : 'text-gray-400'}`}>
+                  <span className={`w-5 h-5 rounded-full border flex items-center justify-center text-[9px] ${state.currentStage === step.s ? 'border-[#1A1A1A] bg-[#1A1A1A] text-white' : 'border-gray-200'}`}>
                     {step.i}
                   </span>
                   {step.n}
                 </div>
-                {idx < arr.length - 1 && <ChevronRight size={14} className="text-gray-200" />}
+                {idx < arr.length - 1 && <ChevronRight size={10} className="text-gray-200" />}
               </React.Fragment>
             ))}
           </nav>
 
-          {state.currentStage !== Stage.INPUT && (
+          <div className="flex items-center gap-3">
+            {isAuthenticated ? (
+              <button 
+                onClick={() => setIsBillingOpen(!isBillingOpen)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 text-[#007AFF] hover:bg-blue-100 transition-all flex items-center gap-2"
+              >
+                <Zap size={14} />
+                ${userStats.balance.toFixed(2)}
+              </button>
+            ) : (
+              <button 
+                onClick={() => setIsAuthModalOpen(true)}
+                className="px-4 py-1.5 rounded-lg text-xs font-bold bg-[#1A1A1A] text-white hover:bg-black transition-all shadow-sm"
+              >
+                Войти
+              </button>
+            )}
+            
             <button 
               onClick={reset}
-              className="px-4 py-2 rounded-xl text-sm font-bold text-gray-400 hover:text-[#141414] hover:bg-gray-100 transition-all flex items-center gap-2"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-[#1A1A1A] transition-all flex items-center gap-2"
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft size={14} />
               Сброс
             </button>
-          )}
+          </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-16">
+      <main className="flex-grow w-full max-w-5xl mx-auto px-6 py-8 md:py-12">
         {state.error && (
           <div className="mb-8 p-6 bg-red-50 border border-red-100 rounded-[32px] flex items-center gap-4 text-red-600">
             <AlertCircle size={24} />
@@ -295,24 +367,80 @@ export default function App() {
           action={state.activeAction} 
           progress={progress} 
         />
+
+        {/* Billing Sidebar/Modal */}
+        <AnimatePresence>
+          {isBillingOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsBillingOpen(false)}
+                className="absolute inset-0 bg-black/20 backdrop-blur-md"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, x: 20 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.9, x: 20 }}
+                className="relative z-10"
+              >
+                <BillingInfo 
+                  stats={userStats} 
+                  onTopUp={() => setUserStats(prev => ({ ...prev, balance: prev.balance + 50 }))}
+                  onUpgrade={(plan) => setUserStats(prev => ({ ...prev, plan }))}
+                />
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Auth Modal */}
+        <AuthModal 
+          isOpen={isAuthModalOpen} 
+          onClose={() => setIsAuthModalOpen(false)} 
+          onLogin={handleLogin} 
+        />
+
+        {/* Last Request Cost Toast */}
+        <AnimatePresence>
+          {lastRequestCost && (
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }}
+              className="fixed bottom-6 left-6 bg-white p-4 rounded-2xl shadow-xl border border-gray-100 z-50 flex items-center gap-3"
+            >
+              <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center text-green-600">
+                <Zap size={16} />
+              </div>
+              <div>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Стоимость</p>
+                <p className="text-xs font-bold text-[#1A1A1A]">
+                  {lastRequestCost.tokens.toLocaleString()} • ${lastRequestCost.usd.toFixed(4)}
+                </p>
+              </div>
+              <button 
+                onClick={() => setLastRequestCost(null)}
+                className="ml-2 text-gray-300 hover:text-gray-500"
+              >
+                <X size={14} />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#141414]/5 py-16 mt-24 bg-white">
+      <footer className="border-t border-gray-100 py-12 bg-white flex-shrink-0">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
-              <Sparkles size={18} />
-            </div>
-            <div className="text-sm">
-              <p className="font-bold text-gray-900">Story Tales Catalyst</p>
-              <p className="text-gray-400">Виртуальный офис ИИ-агентов v2.0</p>
-            </div>
-          </div>
-          <div className="flex gap-10 text-xs font-bold uppercase tracking-widest text-gray-400">
-            <a href="#" className="hover:text-[#5A5A40] transition-colors">Документация</a>
-            <a href="#" className="hover:text-[#5A5A40] transition-colors">Методология</a>
-            <a href="#" className="hover:text-[#5A5A40] transition-colors">Поддержка</a>
+          <p className="text-sm text-gray-400">
+            © 2026 Story Tales Catalyst. Виртуальный офис ИИ-агентов.
+          </p>
+          <div className="flex gap-8 text-sm text-gray-400">
+            <a href="#" className="hover:text-[#007AFF] transition-colors">Документация</a>
+            <a href="#" className="hover:text-[#007AFF] transition-colors">Методология</a>
+            <a href="#" className="hover:text-[#007AFF] transition-colors">Поддержка</a>
           </div>
         </div>
       </footer>

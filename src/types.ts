@@ -11,6 +11,22 @@ export enum Stage {
   BOOK_CREATION = 'BOOK_CREATION',
 }
 
+export type PlanType = 'FREE' | 'PRO' | 'ULTRA';
+
+export interface UserStats {
+  plan: PlanType;
+  storiesCreated: number;
+  tokensUsed: number;
+  balance: number; // in USD
+  totalSpent: number; // in USD
+}
+
+export const PLAN_LIMITS: Record<PlanType, { maxStories: number; topUpAllowed: boolean; topUpLimit?: number }> = {
+  FREE: { maxStories: 1, topUpAllowed: false },
+  PRO: { maxStories: 10, topUpAllowed: true, topUpLimit: 50 },
+  ULTRA: { maxStories: Infinity, topUpAllowed: true },
+};
+
 export interface ProjectInput {
   theme: string;
   ageGroup: string;

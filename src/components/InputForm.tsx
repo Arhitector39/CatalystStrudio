@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { BookOpen, Target, Users, Smartphone, Send, Loader2, Sparkles } from 'lucide-react';
+import { Smartphone, Loader2, Sparkles, ChevronRight } from 'lucide-react';
 import { ProjectInput } from '../types';
 
 interface Props {
@@ -14,184 +14,132 @@ interface Props {
 }
 
 export default function InputForm({ onSubmit, isLoading }: Props) {
-  const [theme, setTheme] = useState('');
-  const [ageGroup, setAgeGroup] = useState('3-5 лет');
-  const [parentalGoals, setParentalGoals] = useState('');
-  const [platforms, setPlatforms] = useState<string[]>(['Планшет']);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!theme || !parentalGoals) return;
-    onSubmit({ theme, ageGroup, parentalGoals, platforms });
-  };
-
-  const togglePlatform = (p: string) => {
-    setPlatforms(prev => 
-      prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]
-    );
-  };
+  const [input, setInput] = useState<ProjectInput>({
+    theme: '',
+    ageGroup: '3-5 лет',
+    parentalGoals: '',
+    platforms: ['Web Responsive'],
+  });
 
   const fillTestData = () => {
-    const samples = [
-      {
-        theme: 'Маленький светлячок по имени Люми, который потерял свой фонарик в Зачарованном Саду. Он встречает мудрую сову и игривых лягушек, которые помогают ему понять, что свет исходит изнутри.',
-        age: '3-5 лет',
-        goals: 'Развитие уверенности в себе, преодоление страха темноты, обучение взаимопомощи и дружбе.',
-        platforms: ['Планшет', 'Телефон']
-      },
-      {
-        theme: 'Космический кот Астро, путешествующий по планетам из сладостей. Ему нужно собрать ингредиенты для звездного пирога, решая простые математические задачки и изучая основы гравитации.',
-        age: '5-7 лет',
-        goals: 'Обучение счету, знакомство с базовыми понятиями физики и космоса, развитие логического мышления.',
-        platforms: ['Планшет', 'Веб']
-      },
-      {
-        theme: 'Подводное королевство, где маленькая рыбка Несси учится очищать океан от пластика. Она собирает команду друзей, чтобы построить коралловый риф будущего.',
-        age: '7-10 лет',
-        goals: 'Экологическое воспитание, осознанное потребление, лидерские качества и работа в команде.',
-        platforms: ['Планшет']
-      },
-      {
-        theme: 'Волшебная кухня бабушки Агаты, где овощи оживают и рассказывают свои истории. Ребенок помогает готовить суп, узнавая о пользе витаминов и здоровом питании.',
-        age: '2-3 года',
-        goals: 'Формирование здоровых пищевых привычек, развитие мелкой моторики через интерактив, расширение словарного запаса.',
-        platforms: ['Планшет', 'Телефон']
-      },
-      {
-        theme: 'Дракончик Гоша, который боится летать. Он отправляется в пешее путешествие через горы, где встречает разных существ и учится принимать свои особенности.',
-        age: '3-5 лет',
-        goals: 'Эмоциональный интеллект, принятие себя, борьба с тревожностью и развитие эмпатии.',
-        platforms: ['Планшет', 'Телефон', 'Веб']
-      }
+    const themes = [
+      'Космическое приключение маленького робота Болта, который ищет запчасти для своего друга на планетах из сладостей.',
+      'Тайна заколдованного леса, где говорящие грибы помогают лисенку Люми найти дорогу домой.',
+      'Путешествие капельки воды по всему миру: от океана до облаков и обратно в горный ручей.',
+      'История о необычной дружбе кота Астро и маленького дракончика, который боится летать.',
+      'Приключения в стране забытых игрушек, где старый мишка учит новых друзей ценить дружбу.'
+    ];
+    const ages = ['2-3 года', '3-5 лет', '5-7 лет', '7-10 лет'];
+    const goals = [
+      'Развитие эмпатии, доброты и умения помогать окружающим в трудных ситуациях.',
+      'Изучение основ экологии и важности бережного отношения к природе и водным ресурсам.',
+      'Преодоление страха темноты и неизвестности через игру и воображение.',
+      'Укрепление уверенности в себе и принятие своих уникальных особенностей.',
+      'Понимание важности честности и ответственности за свои поступки.'
     ];
 
-    const randomSample = samples[Math.floor(Math.random() * samples.length)];
-    setTheme(randomSample.theme);
-    setAgeGroup(randomSample.age);
-    setParentalGoals(randomSample.goals);
-    setPlatforms(randomSample.platforms);
+    setInput({
+      theme: themes[Math.floor(Math.random() * themes.length)],
+      ageGroup: ages[Math.floor(Math.random() * ages.length)],
+      parentalGoals: goals[Math.floor(Math.random() * goals.length)],
+      platforms: ['Web Responsive'],
+    });
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="max-w-3xl mx-auto"
-    >
-      <div className="text-center mb-16">
-        <h2 className="text-6xl font-serif italic mb-6">Story Tales Catalyst</h2>
-        <p className="text-gray-500 max-w-lg mx-auto leading-relaxed">
-          Начните путь от идеи до полноценного проекта интерактивной книги. Опишите ваше видение, и наша команда ИИ-агентов возьмет на себя всё остальное.
-        </p>
-        <button
-          type="button"
-          onClick={fillTestData}
-          className="mt-8 px-6 py-2 bg-[#F5F5F0] rounded-full text-[10px] font-bold uppercase tracking-widest text-[#5A5A40] hover:bg-[#5A5A40] hover:text-white transition-all flex items-center gap-2 mx-auto"
-        >
-          <Sparkles size={12} />
-          Заполнить магией
-        </button>
+    <div className="w-full max-w-3xl mx-auto px-4">
+      <div className="bg-white rounded-[32px] p-8 md:p-12 shadow-xl shadow-blue-900/5 border border-gray-100">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+          <div className="max-w-lg">
+            <h2 className="text-3xl md:text-4xl font-serif italic mb-2 text-[#1A1A1A]">Начните проект</h2>
+            <p className="text-gray-500 text-base leading-relaxed">
+              Опишите вашу идею, и наши ИИ-агенты превратят её в полноценную интерактивную историю.
+            </p>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={fillTestData}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-[#007AFF] rounded-xl font-bold text-xs hover:bg-blue-100 transition-all border border-blue-100 shadow-sm whitespace-nowrap self-start md:self-auto"
+          >
+            <Sparkles size={16} />
+            Заполнить магией
+          </motion.button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8">
+          <div className="space-y-3">
+            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 ml-1">Тема истории</label>
+            <textarea
+              value={input.theme}
+              onChange={(e) => setInput({ ...input, theme: e.target.value })}
+              placeholder="Например: Маленький лисенок ищет дорогу домой через волшебный лес..."
+              className="w-full p-6 bg-gray-50 border border-gray-100 focus:border-[#007AFF]/20 focus:bg-white rounded-2xl min-h-[140px] text-base transition-all outline-none resize-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-3">
+              <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 ml-1">Возрастная группа</label>
+              <input
+                type="text"
+                value={input.ageGroup}
+                onChange={(e) => setInput({ ...input, ageGroup: e.target.value })}
+                placeholder="Например: 5-7 лет"
+                className="w-full p-4 bg-gray-50 border border-gray-100 focus:border-[#007AFF]/20 focus:bg-white rounded-xl text-base transition-all outline-none"
+              />
+            </div>
+            <div className="space-y-3">
+              <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 ml-1">Цели обучения</label>
+              <input
+                type="text"
+                value={input.parentalGoals}
+                onChange={(e) => setInput({ ...input, parentalGoals: e.target.value })}
+                placeholder="Например: Развитие эмпатии"
+                className="w-full p-4 bg-gray-50 border border-gray-100 focus:border-[#007AFF]/20 focus:bg-white rounded-xl text-base transition-all outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 ml-1">Платформа</label>
+            <div className="p-6 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-[#007AFF] shadow-sm">
+                  <Smartphone size={24} />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-[#1A1A1A]">Web Responsive</p>
+                  <p className="text-xs text-gray-500">Оптимизировано для мобильных устройств</p>
+                </div>
+              </div>
+              <div className="px-3 py-1 bg-blue-100 text-[#007AFF] rounded-lg text-[9px] font-bold uppercase tracking-widest">
+                По умолчанию
+              </div>
+            </div>
+          </div>
+
+          <motion.button
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            onClick={() => onSubmit(input)}
+            disabled={isLoading || !input.theme}
+            className="w-full py-5 bg-[#007AFF] text-white rounded-2xl font-bold text-lg shadow-lg shadow-blue-100 hover:bg-[#0066DD] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 mt-2"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="animate-spin" size={20} />
+                Запуск...
+              </>
+            ) : (
+              <>
+                Запустить проект
+                <ChevronRight size={20} />
+              </>
+            )}
+          </motion.button>
+        </div>
       </div>
-
-      <form onSubmit={handleSubmit} className="space-y-12 bg-white p-12 lg:p-20 rounded-[64px] shadow-xl border border-[#141414]/5 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
-          <BookOpen size={200} />
-        </div>
-
-        <div className="space-y-4 relative z-10">
-          <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
-            <BookOpen size={14} />
-            Мир, Герои и Сюжет
-          </label>
-          <textarea
-            required
-            value={theme}
-            onChange={(e) => setTheme(e.target.value)}
-            placeholder="Опишите вашу идею во всех красках..."
-            className="w-full h-40 p-8 bg-[#FDFDFB] rounded-[32px] border border-[#141414]/5 focus:ring-2 focus:ring-[#5A5A40] transition-all resize-none text-lg leading-relaxed placeholder:text-gray-300"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 relative z-10">
-          <div className="space-y-4">
-            <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
-              <Users size={14} />
-              Возрастная группа
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {['2-3 года', '3-5 лет', '5-7 лет', '7-10 лет'].map(age => (
-                <button
-                  key={age}
-                  type="button"
-                  onClick={() => setAgeGroup(age)}
-                  className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all border ${
-                    ageGroup === age 
-                      ? 'bg-[#5A5A40] text-white border-[#5A5A40] shadow-md' 
-                      : 'bg-white text-gray-500 border-gray-100 hover:border-[#5A5A40]/30'
-                  }`}
-                >
-                  {age}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
-              <Smartphone size={14} />
-              Целевые платформы
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {['Планшет', 'Телефон', 'Веб'].map(p => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => togglePlatform(p)}
-                  className={`px-6 py-3 rounded-2xl text-xs font-bold transition-all border ${
-                    platforms.includes(p) 
-                      ? 'bg-[#141414] text-white border-[#141414] shadow-md' 
-                      : 'bg-white text-gray-500 border-gray-100 hover:border-[#141414]/30'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4 relative z-10">
-          <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
-            <Target size={14} />
-            Педагогические цели
-          </label>
-          <textarea
-            required
-            value={parentalGoals}
-            onChange={(e) => setParentalGoals(e.target.value)}
-            placeholder="Чему книга должна научить ребенка?"
-            className="w-full h-32 p-8 bg-[#FDFDFB] rounded-[32px] border border-[#141414]/5 focus:ring-2 focus:ring-[#5A5A40] transition-all resize-none text-lg leading-relaxed placeholder:text-gray-300"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full py-8 bg-[#5A5A40] text-white rounded-full font-bold text-lg flex items-center justify-center gap-4 hover:bg-[#4A4A30] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl shadow-[#5A5A40]/30 group"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 size={24} className="animate-spin" />
-              Запуск Catalyst...
-            </>
-          ) : (
-            <>
-              Запустить генерацию проекта
-              <Send size={24} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-            </>
-          )}
-        </button>
-      </form>
-    </motion.div>
+    </div>
   );
 }

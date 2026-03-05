@@ -1,13 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Cormorant Garamond", serif;
+  
+  --color-brand: #007AFF;
+  --color-ink: #1A1A1A;
+  --color-paper: #FDFDFB;
 }
 
 @layer base {
   body {
-    @apply antialiased;
+    @apply text-ink antialiased min-h-screen;
+    background: radial-gradient(circle at top left, #FDFDFB 0%, #F5F7FF 50%, #FDFDFB 100%);
   }
 
   /* Basic prose-like styles for Markdown */
@@ -18,7 +24,7 @@
   .prose ul { @apply list-disc list-inside mb-4 space-y-1; }
   .prose ol { @apply list-decimal list-inside mb-4 space-y-1; }
   .prose li { @apply text-sm; }
-  .prose strong { @apply font-semibold text-[#141414]; }
-  .prose blockquote { @apply border-l-4 border-[#5A5A40] pl-4 italic my-4 text-gray-600; }
+  .prose strong { @apply font-bold text-[#007AFF]; }
+  .prose blockquote { @apply border-l-4 border-blue-100 pl-4 italic my-4 text-gray-600; }
 }
 
