@@ -6,7 +6,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AgentInfo } from '../types';
-import OfficePlan from './OfficePlan';
+import LiveOffice from './LiveOffice';
 
 interface Props {
   agent: AgentInfo | null;
@@ -19,16 +19,16 @@ export default function AgentProgress({ agent, action, progress }: Props) {
     <AnimatePresence mode="wait">
       {agent && (
         <>
-          {/* Office Plan in the Center */}
+          {/* Live Office Visualization in the Center */}
           <div className="fixed inset-0 flex items-center justify-center z-[50] pointer-events-none p-12">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.05 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="w-full max-w-4xl"
+              className="w-full max-w-5xl h-[70vh] pointer-events-auto"
             >
-              <OfficePlan activeAgent={agent} progress={progress} />
+              <LiveOffice />
             </motion.div>
           </div>
 

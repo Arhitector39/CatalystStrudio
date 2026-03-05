@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, 
@@ -18,8 +18,12 @@ import {
   AlertCircle,
   ArrowLeft,
   X,
-  Zap
+  Zap,
+  LogOut
 } from 'lucide-react';
+import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { auth, db } from './firebase';
 import { Stage, ProjectState, ProjectInput, IDEATION_AGENTS, AGENTS, UserStats, PLAN_LIMITS } from './types';
 import { generateIdeation, generateRoadmap, generateOfficeOutputs, generateBook } from './services/geminiService';
 import InputForm from './components/InputForm';
@@ -53,8 +57,48 @@ export default function App() {
     totalSpent: 0,
   });
 
+  const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setIsAuthenticated(!!currentUser);
+      
+      if (currentUser) {
+        // Listen to user profile in Firestore
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const unsubProfile = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setUserStats({
+              plan: data.plan || 'FREE',
+              storiesCreated: data.storiesCreated || 0,
+              tokensUsed: data.tokensUsed || 0,
+              balance: data.balance || 0,
+              totalSpent: data.totalSpent || 0,
+            });
+          }
+        });
+        return () => unsubProfile();
+      } else {
+        setUserStats({
+          plan: 'FREE',
+          storiesCreated: 0,
+          tokensUsed: 0,
+          balance: 0,
+          totalSpent: 0,
+        });
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    reset();
+  };
   const [isBillingOpen, setIsBillingOpen] = useState(false);
   const [lastRequestCost, setLastRequestCost] = useState<{ tokens: number; usd: number } | null>(null);
 
@@ -62,18 +106,36 @@ export default function App() {
 
   const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
-  const trackUsage = (tokens: number) => {
+  const trackUsage = async (tokens: number) => {
     const costPerToken = 0.00002; // Base cost
     const margin = 1.3; // +30%
     const userCost = tokens * costPerToken * margin;
     
     setLastRequestCost({ tokens, usd: userCost });
-    setUserStats(prev => ({
-      ...prev,
-      tokensUsed: prev.tokensUsed + tokens,
-      totalSpent: prev.totalSpent + userCost,
-      balance: Math.max(0, prev.balance - userCost)
-    }));
+    
+    if (user) {
+      const userDocRef = doc(db, 'users', user.uid);
+      const newBalance = Math.max(0, userStats.balance - userCost);
+      const newTokens = userStats.tokensUsed + tokens;
+      const newSpent = userStats.totalSpent + userCost;
+      
+      try {
+        await setDoc(userDocRef, {
+          balance: newBalance,
+          tokensUsed: newTokens,
+          totalSpent: newSpent
+        }, { merge: true });
+      } catch (e) {
+        console.error("Error updating usage:", e);
+      }
+    } else {
+      setUserStats(prev => ({
+        ...prev,
+        tokensUsed: prev.tokensUsed + tokens,
+        totalSpent: prev.totalSpent + userCost,
+        balance: Math.max(0, prev.balance - userCost)
+      }));
+    }
   };
 
   const handleStart = async (input: ProjectInput) => {
@@ -123,13 +185,23 @@ export default function App() {
     }
   };
 
-  const handleLogin = (method: string) => {
-    console.log('Logging in with', method);
-    setIsAuthenticated(true);
-    setIsAuthModalOpen(false);
-    // In a real app, we would fetch user stats from Firebase here
-    if (userStats.balance === 0) {
-      setUserStats(prev => ({ ...prev, balance: 10 })); // Give some initial balance for demo
+  const handleTopUp = async () => {
+    if (!user) return;
+    const userDocRef = doc(db, 'users', user.uid);
+    try {
+      await setDoc(userDocRef, { balance: userStats.balance + 50 }, { merge: true });
+    } catch (e) {
+      console.error("Error topping up:", e);
+    }
+  };
+
+  const handleUpgrade = async (plan: string) => {
+    if (!user) return;
+    const userDocRef = doc(db, 'users', user.uid);
+    try {
+      await setDoc(userDocRef, { plan }, { merge: true });
+    } catch (e) {
+      console.error("Error upgrading:", e);
     }
   };
 
@@ -315,13 +387,22 @@ export default function App() {
 
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
-              <button 
-                onClick={() => setIsBillingOpen(!isBillingOpen)}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 text-[#007AFF] hover:bg-blue-100 transition-all flex items-center gap-2"
-              >
-                <Zap size={14} />
-                ${userStats.balance.toFixed(2)}
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setIsBillingOpen(!isBillingOpen)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 text-[#007AFF] hover:bg-blue-100 transition-all flex items-center gap-2"
+                >
+                  <Zap size={14} />
+                  ${userStats.balance.toFixed(2)}
+                </button>
+                <button 
+                  onClick={handleLogout}
+                  className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                  title="Выйти"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
             ) : (
               <button 
                 onClick={() => setIsAuthModalOpen(true)}
@@ -387,8 +468,8 @@ export default function App() {
               >
                 <BillingInfo 
                   stats={userStats} 
-                  onTopUp={() => setUserStats(prev => ({ ...prev, balance: prev.balance + 50 }))}
-                  onUpgrade={(plan) => setUserStats(prev => ({ ...prev, plan }))}
+                  onTopUp={handleTopUp}
+                  onUpgrade={handleUpgrade}
                 />
               </motion.div>
             </div>
@@ -399,7 +480,6 @@ export default function App() {
         <AuthModal 
           isOpen={isAuthModalOpen} 
           onClose={() => setIsAuthModalOpen(false)} 
-          onLogin={handleLogin} 
         />
 
         {/* Last Request Cost Toast */}
